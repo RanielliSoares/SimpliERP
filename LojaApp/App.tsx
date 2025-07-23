@@ -3,6 +3,7 @@ import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import LoginScreen from './src/pages/LoginScreen';
 import BottomTabsNavigator from './src/pages/BottomTabsNavigator';
 import CadastroProdutoScreen from './src/pages/CadastroProdutoScreen';
+import CadastroClienteScreen from './src/pages/CadastroClienteScreen';
 import Toast from 'react-native-toast-message';
 
 
@@ -17,7 +18,7 @@ export default function App() {
           <Stack.Screen name="Login" component={LoginScreen} />
           <Stack.Screen name="Home" component={BottomTabsNavigator} />
           <Stack.Screen name="CadastroProduto" component={CadastroProdutoScreen} />
-
+          <Stack.Screen name="CadastroCliente" component={CadastroClienteScreen} />
         </Stack.Navigator>
       </NavigationContainer>
       <Toast />
