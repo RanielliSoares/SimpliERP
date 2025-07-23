@@ -3,6 +3,7 @@ import { MaterialCommunityIcons } from '@expo/vector-icons';
 import ProdutosScreen from '../ProdutosScreen';
 import ClientesScreen from '../ClientesScreen';
 import VendasScreen from '../VendasScreen';
+import ConfiguracoesScreen from '../ConfiguracoesScreen';
 
 const Tab = createBottomTabNavigator();
 
@@ -14,10 +15,10 @@ export default function BottomTabsNavigator() {
         tabBarActiveTintColor: '#f63b92ff',
         tabBarInactiveTintColor: '#9ca3af',
         tabBarStyle: {
-          backgroundColor: '#ffffff',            
+          backgroundColor: '#ffffff',
           borderTopColor: '#e5e7eb',
         },
-        tabBarLabelStyle: { 
+        tabBarLabelStyle: {
           fontSize: 12,
           fontWeight: '500',
         },
@@ -48,6 +49,16 @@ export default function BottomTabsNavigator() {
           tabBarIcon: ({ color, size }) => (
             <MaterialCommunityIcons name="account-group" size={size} color={color} />
           ),
+        }}
+      />
+      <Tab.Screen
+        name="Configuracoes"
+        component={ConfiguracoesScreen}
+        options={{
+          tabBarIcon: ({ color, size }) => (
+            <MaterialCommunityIcons name="cog-outline" size={size} color={color} />
+          ),
+          tabBarLabel: 'Configurações',
         }}
       />
 
