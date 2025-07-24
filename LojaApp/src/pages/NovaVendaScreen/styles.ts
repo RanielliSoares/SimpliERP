@@ -7,10 +7,12 @@ export const styles = StyleSheet.create({
     padding: 20,
   },
   title: {
+    marginTop: 10,
+    textAlign: 'center',
     fontSize: 22,
     fontWeight: 'bold',
-    marginBottom: 16,
     color: '#111827',
+    marginBottom: 16,
   },
   box: {
     backgroundColor: '#fff',
@@ -33,6 +35,10 @@ export const styles = StyleSheet.create({
     flexGrow: 0,
     marginBottom: 20,
   },
+  listaWrapper: {
+  flex: 1,
+  maxHeight: '55%', // 👈 ajusta conforme necessário
+},
   card: {
     backgroundColor: '#fff',
     borderRadius: 8,
@@ -50,17 +56,29 @@ export const styles = StyleSheet.create({
     fontSize: 14,
     color: '#374151',
   },
+  cardRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    marginTop: 6,
+  },
   empty: {
     textAlign: 'center',
     color: '#6b7280',
     fontSize: 14,
     marginVertical: 10,
   },
+  footer: {
+    position: 'absolute',
+    bottom: 45,
+    left: 20,
+    right: 20,
+    gap: 10,
+  },
   addButton: {
     backgroundColor: '#f63b92ff',
     padding: 12,
     borderRadius: 8,
-    marginBottom: 12,
   },
   addButtonText: {
     color: '#fff',
@@ -79,19 +97,50 @@ export const styles = StyleSheet.create({
     fontSize: 16,
     textAlign: 'center',
   },
-  modal: {
-    backgroundColor: '#fff',
-    padding: 16,
+  cancelButton: {
+    backgroundColor: '#9ca3af',
+    padding: 12,
     borderRadius: 8,
   },
+  cancelButtonText: {
+    color: '#fff',
+    fontWeight: 'bold',
+    fontSize: 16,
+    textAlign: 'center',
+  },
+  modal: {
+    backgroundColor: '#fff',
+    borderRadius: 8,
+    padding: 16,
+    maxHeight: '80%',
+  },
   modalTitle: {
+    textAlign: 'center',
     fontSize: 18,
     fontWeight: 'bold',
     marginBottom: 12,
+  },
+  modalInput: {
+    borderWidth: 1,
+    borderColor: '#ddd',
+    borderRadius: 8,
+    paddingHorizontal: 12,
+    height: 44,
+    marginBottom: 12,
+    backgroundColor: '#f9fafb',
   },
   modalItem: {
     paddingVertical: 10,
     borderBottomWidth: 1,
     borderColor: '#eee',
+  },
+  modalCancel: {
+    marginTop: 16,
+    alignSelf: 'center',
+  },
+  modalCancelText: {
+    fontSize: 16,
+    color: '#f63b92ff',
+    fontWeight: 'bold',
   },
 });

@@ -27,9 +27,7 @@ export default function App() {
           <Stack.Screen name="FormasPagamento" component={FormasPagamentoScreen} />
           <Stack.Screen name="NovaVenda" component={NovaVendaScreen} />
           <Stack.Screen name="ResumoVenda" component={ResumoVendaScreen} />
-          {/* Adicione outras telas aqui */}
-          {/* <Stack.Screen name="OutraTela" component={OutraTela} /> */}
-          {/* Adicione outras telas aqui */}
+        
         </Stack.Navigator>
       </NavigationContainer>
       <Toast />
