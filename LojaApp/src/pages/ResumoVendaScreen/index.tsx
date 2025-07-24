@@ -12,7 +12,13 @@ import { useRoute, useNavigation } from '@react-navigation/native';
 import { styles } from './styles';
 import { useState } from 'react';
 import { Picker } from '@react-native-picker/picker';
-import { addDoc, collection, Timestamp } from 'firebase/firestore';
+import {
+  addDoc,
+  collection,
+  Timestamp,
+  updateDoc,
+  doc,
+} from 'firebase/firestore';
 import { db } from '../../services/firebaseConfig';
 import Toast from 'react-native-toast-message';
 
@@ -26,45 +32,86 @@ export default function ResumoVendaScreen() {
   const [vezes, setVezes] = useState('');
   const [entrada, setEntrada] = useState('');
 
+  const formatarMoeda = (valor: string) => {
+    const limpa = valor.replace(/[^\d]/g, '');
+    const numero = parseFloat(limpa) / 100;
+    if (isNaN(numero)) return 'R$ 0,00';
+    return numero.toLocaleString('pt-BR', {
+      style: 'currency',
+      currency: 'BRL',
+    });
+  };
+
+  const calcularTotal = () => {
+    const valorDesconto = parseFloat(descontoBruto) / 100 || 0;
+    const totalBruto = produtos.reduce(
+      (total, item) => total + item.preco * item.quantidade,
+      0,
+    );
+    return Math.max(totalBruto - valorDesconto, 0);
+  };
+
   const finalizarVenda = async () => {
     if (!formaPagamento) {
-      alert('Selecione uma forma de pagamento.');
+      Toast.show({
+        type: 'error',
+        text1: 'Selecione uma forma de pagamento.',
+      });
       return;
     }
 
-    if (formaPagamento === 'Cartão Crédito' && (!vezes || parseInt(vezes) <= 0)) {
-      alert('Informe em quantas vezes foi parcelado no crédito.');
+    if (
+      formaPagamento === 'Cartão Crédito' &&
+      (!vezes || parseInt(vezes) <= 0)
+    ) {
+      Toast.show({
+        type: 'error',
+        text1: 'Informe a quantidade de parcelas no crédito.',
+      });
       return;
     }
+
+    let valorRestante = 0;
 
     if (formaPagamento === 'Promissória') {
-      const entradaValor = parseFloat(entrada.replace(/[^\d]/g, '')) / 100 || 0;
-      const valorRestante = calcularTotal() - entradaValor;
+      const entradaValor =
+        parseFloat(entrada.replace(/[^\d]/g, '')) / 100 || 0;
+      valorRestante = calcularTotal() - entradaValor;
 
       if (entradaValor <= 0) {
-        alert('É necessário informar o valor da entrada.');
-        return;
-      }
-
-      if (!cliente.limiteCredito) {
         Toast.show({
           type: 'error',
-          text1: 'O cliente não possui limite de crédito definido.',
+          text1: 'É necessário informar o valor da entrada.',
         });
         return;
       }
 
-      if (valorRestante > cliente.limiteCredito) {
-        alert(
-          `O valor restante após entrada excede o limite de crédito.\nLimite: R$ ${cliente.limiteCredito.toFixed(
-            2
-          ).replace('.', ',')}\nValor restante: R$ ${valorRestante.toFixed(2).replace('.', ',')}`
-        );
+      if (!cliente.limiteCredito || cliente.limiteCredito <= 0) {
+        Toast.show({
+          type: 'error',
+          text1: 'Cliente sem limite de crédito definido.',
+        });
+        return;
+      }
+
+      if (valorRestante > cliente.creditoDisponivel) {
+        Toast.show({
+          type: 'error',
+          text1: 'Limite de crédito excedido',
+          text2: `Disponível: R$ ${cliente.creditoDisponivel
+            .toFixed(2)
+            .replace('.', ',')}\nValor restante: R$ ${valorRestante
+              .toFixed(2)
+              .replace('.', ',')}`,
+        });
         return;
       }
 
       if (!vezes || parseInt(vezes) <= 0) {
-        alert('Informe em quantas vezes foi parcelada a promissória.');
+        Toast.show({
+          type: 'error',
+          text1: 'Informe a quantidade de parcelas na promissória.',
+        });
         return;
       }
     }
@@ -81,20 +128,59 @@ export default function ResumoVendaScreen() {
             ? parseFloat(entrada.replace(/[^\d]/g, '')) / 100 || 0
             : null,
         vezes:
-          formaPagamento === 'Cartão Crédito' || formaPagamento === 'Promissória'
+          formaPagamento === 'Cartão Crédito' ||
+            formaPagamento === 'Promissória'
             ? parseInt(vezes)
             : null,
         total: calcularTotal(),
         criadoEm: Timestamp.now(),
       });
 
+      if (formaPagamento === 'Promissória') {
+        const novoCredito = cliente.creditoDisponivel - valorRestante;
+        await updateDoc(doc(db, 'clientes', cliente.id), {
+          creditoDisponivel: novoCredito,
+        });
+      }
+
+      for (const item of produtos) {
+        const novoEstoque = item.estoque - item.quantidade;
+
+        if (novoEstoque < 0) {
+          Toast.show({
+            type: 'error',
+            text1: 'Erro ao atualizar estoque',
+            text2: `Estoque do produto "${item.nome}" não pode ser negativo.`,
+          });
+          return;
+        }
+
+        await updateDoc(doc(db, 'produtos', item.id), {
+          estoque: novoEstoque,
+        });
+      }
       Toast.show({
         type: 'success',
         text1: 'Venda registrada com sucesso!',
       });
 
       setTimeout(() => {
-        navigation.navigate('Home', { screen: 'Vendas' });
+        navigation.navigate('ReciboVenda', {
+          cliente,
+          produtos,
+          formaPagamento,
+          desconto: parseFloat(descontoBruto) / 100 || 0,
+          entrada:
+            formaPagamento === 'Promissória'
+              ? parseFloat(entrada.replace(/[^\d]/g, '')) / 100 || 0
+              : null,
+          vezes:
+            formaPagamento === 'Cartão Crédito' || formaPagamento === 'Promissória'
+              ? parseInt(vezes)
+              : null,
+          total: calcularTotal(),
+          criadoEm: Timestamp.now(),
+        });
       }, 1500);
 
     } catch (error) {
@@ -105,27 +191,6 @@ export default function ResumoVendaScreen() {
         text2: 'Tente novamente.',
       });
     }
-  };
-
-  const formatarMoeda = (valor: string) => {
-    const limpa = valor.replace(/[^\d]/g, '');
-    const numero = parseFloat(limpa) / 100;
-
-    if (isNaN(numero)) return 'R$ 0,00';
-
-    return numero.toLocaleString('pt-BR', {
-      style: 'currency',
-      currency: 'BRL',
-    });
-  };
-
-  const calcularTotal = () => {
-    const valorDesconto = parseFloat(descontoBruto) / 100 || 0;
-    const totalBruto = produtos.reduce(
-      (total, item) => total + item.preco * item.quantidade,
-      0,
-    );
-    return Math.max(totalBruto - valorDesconto, 0);
   };
 
   return (
@@ -142,16 +207,16 @@ export default function ResumoVendaScreen() {
               contentContainerStyle={{ gap: 12 }}
               keyboardShouldPersistTaps="handled"
             >
-              {/* Cliente */}
               <View style={styles.box}>
                 <Text style={styles.label}>Cliente:</Text>
                 <Text style={styles.value}>{cliente.nome}</Text>
                 {cliente.telefone && (
-                  <Text style={styles.value}>Telefone: {cliente.telefone}</Text>
+                  <Text style={styles.value}>
+                    Telefone: {cliente.telefone}
+                  </Text>
                 )}
               </View>
 
-              {/* Produtos */}
               <Text style={styles.subTitle}>Itens</Text>
               {produtos.map((item, index) => (
                 <View key={index} style={styles.card}>
@@ -160,15 +225,18 @@ export default function ResumoVendaScreen() {
                     {item.tamanho} - {item.cor}
                   </Text>
                   <Text style={styles.cardDetail}>
-                    {item.quantidade} un. x R$ {item.preco.toFixed(2).replace('.', ',')}
+                    {item.quantidade} un. x R${' '}
+                    {item.preco.toFixed(2).replace('.', ',')}
                   </Text>
                   <Text style={styles.cardTotal}>
-                    Subtotal: R$ {(item.quantidade * item.preco).toFixed(2).replace('.', ',')}
+                    Subtotal: R${' '}
+                    {(item.quantidade * item.preco)
+                      .toFixed(2)
+                      .replace('.', ',')}
                   </Text>
                 </View>
               ))}
 
-              {/* Desconto */}
               <Text style={styles.subTitle}>Desconto</Text>
               <TextInput
                 placeholder="R$ 0,00"
@@ -181,7 +249,6 @@ export default function ResumoVendaScreen() {
                 style={styles.input}
               />
 
-              {/* Forma de pagamento */}
               <Text style={styles.subTitle}>Forma de Pagamento</Text>
               <View style={styles.pickerWrapper}>
                 <Picker
@@ -201,7 +268,6 @@ export default function ResumoVendaScreen() {
                 </Picker>
               </View>
 
-              {/* Campos adicionais */}
               {formaPagamento === 'Cartão Crédito' && (
                 <TextInput
                   placeholder="Parcelado em quantas vezes?"
@@ -217,7 +283,7 @@ export default function ResumoVendaScreen() {
                   <TextInput
                     placeholder="Valor da entrada"
                     keyboardType="numeric"
-                    value={entrada}
+                    value={formatarMoeda(entrada)}
                     onChangeText={setEntrada}
                     style={styles.input}
                   />
@@ -233,7 +299,6 @@ export default function ResumoVendaScreen() {
             </ScrollView>
           </View>
 
-          {/* Total */}
           <View style={styles.totalBox}>
             <Text style={styles.totalLabel}>Total com desconto:</Text>
             <Text style={styles.totalValue}>
@@ -241,7 +306,6 @@ export default function ResumoVendaScreen() {
             </Text>
           </View>
 
-          {/* Botão fixo */}
           <View style={styles.footer}>
             <TouchableOpacity style={styles.finalButton} onPress={finalizarVenda}>
               <Text style={styles.finalButtonText}>Finalizar Venda</Text>

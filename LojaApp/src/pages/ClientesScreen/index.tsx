@@ -23,6 +23,7 @@ type Cliente = {
   endereco?: string;
   permitePromissoria?: boolean;
   limiteCredito?: number;
+  creditoDisponivel?: number;
 };
 
 export default function ClientesScreen() {
@@ -88,6 +89,9 @@ export default function ClientesScreen() {
         </Text>
         <Text style={styles.cardDetail}>
           Limite: R$ {limite.toFixed(2).replace('.', ',')}
+        </Text>
+        <Text style={styles.cardDetail}>
+          Disponível: R$ {item.creditoDisponivel?.toFixed(2).replace('.', ',') ?? '0,00'} 
         </Text>
       </View>
     );

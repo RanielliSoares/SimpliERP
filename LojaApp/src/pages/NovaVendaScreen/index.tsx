@@ -13,6 +13,7 @@ import { useNavigation } from '@react-navigation/native';
 import { collection, getDocs } from 'firebase/firestore';
 import { db } from '../../services/firebaseConfig';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
+import Toast from 'react-native-toast-message';
 
 type Produto = {
   id: string;
@@ -21,6 +22,7 @@ type Produto = {
   tamanho: string;
   cor: string;
   quantidade?: number;
+  estoque?: number;
 };
 
 type Cliente = {
@@ -65,7 +67,8 @@ export default function NovaVendaScreen() {
         tamanho: doc.data().tamanho,
         cor: doc.data().cor,
         quantidade: 1,
-      })) as Produto[];
+        estoque: doc.data().estoque ?? 0,
+      })).filter((item) => typeof item.estoque === 'number' && item.estoque > 0) as Produto[];
       setProdutosDisponiveis(lista);
       setModalProdutoVisivel(true);
     } catch (error) {
@@ -88,20 +91,35 @@ export default function NovaVendaScreen() {
   };
 
   const alterarQuantidade = (id: string, operacao: 'mais' | 'menos') => {
-    setProdutos(prev =>
-      prev.map(p =>
-        p.id === id
-          ? {
-            ...p,
-            quantidade:
-              operacao === 'mais'
-                ? (p.quantidade ?? 1) + 1
-                : Math.max((p.quantidade ?? 1) - 1, 1),
-          }
-          : p,
-      ),
-    );
-  };
+  setProdutos((prev) =>
+    prev.map((p) => {
+      if (p.id !== id) return p;
+
+      const quantidadeAtual = p.quantidade ?? 1;
+      console.log(quantidadeAtual, p.estoque);
+      if (operacao === 'mais') {
+        if (quantidadeAtual >= p.estoque) {
+          Toast.show({
+            type: 'error',
+            text1: 'Estoque insuficiente',
+            text2: `Você só tem ${p.estoque} unidade(s) de ${p.nome} ${p.tamanho} ${p.cor}`,
+          });
+          return p;
+        }
+
+        return {
+          ...p,
+          quantidade: quantidadeAtual + 1,
+        };
+      } else {
+        return {
+          ...p,
+          quantidade: Math.max(quantidadeAtual - 1, 1),
+        };
+      }
+    }),
+  );
+};
 
   const removerProduto = (id: string) => {
     setProdutos(prev => prev.filter(p => p.id !== id));

@@ -8,6 +8,7 @@ import EmpresaScreen from './src/pages/EmpresaScreen';
 import FormasPagamentoScreen from './src/pages/FormasPagamentoScreen';
 import NovaVendaScreen from './src/pages/NovaVendaScreen';
 import ResumoVendaScreen from './src/pages/ResumoVendaScreen';
+import ReciboVendaScreen from './src/pages/ReciboVendaScreen';
 import Toast from 'react-native-toast-message';
 
 
@@ -27,7 +28,7 @@ export default function App() {
           <Stack.Screen name="FormasPagamento" component={FormasPagamentoScreen} />
           <Stack.Screen name="NovaVenda" component={NovaVendaScreen} />
           <Stack.Screen name="ResumoVenda" component={ResumoVendaScreen} />
-        
+          <Stack.Screen name="ReciboVenda" component={ReciboVendaScreen} />
         </Stack.Navigator>
       </NavigationContainer>
       <Toast />

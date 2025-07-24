@@ -32,6 +32,7 @@ type ClienteParams = {
             endereco?: string;
             permitePromissoria?: boolean;
             limiteCredito?: number;
+            creditoDisponivel?: number;
         };
     };
 };
@@ -79,6 +80,9 @@ export default function CadastroClienteScreen() {
             endereco,
             permitePromissoria,
             limiteCredito: permitePromissoria
+                ? parseFloat(limiteCredito.replace(/\D/g, '')) / 100
+                : 0,
+            creditoDisponivel: permitePromissoria
                 ? parseFloat(limiteCredito.replace(/\D/g, '')) / 100
                 : 0,
             atualizadoEm: Timestamp.now(),
